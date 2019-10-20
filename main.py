@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 '''
 * performs GET to URL and save content (text) to cache folder
 * don't perform GET if cache content is already existed
@@ -90,9 +92,11 @@ def download_file(url, file_name):
         f = open(temp_file, "wb")
 
     c.setopt(c.WRITEDATA, f)
-    c.perform()
-    c.close()
-    f.close()
+    try:
+        c.perform()        
+    finally:
+        c.close()
+        f.close()
 
     os.rename(temp_file, file_name)
     print('download done')
@@ -132,7 +136,11 @@ def main():
         track_path = download_html(track_url)
         play_path, track_file_name = parse_track_json(track_path)
         track_file_name = os.path.join(result['title'], track_file_name)
-        download_file(play_path, track_file_name)
+        try:
+            download_file(play_path, track_file_name)
+        except Exception as ex:
+            print(ex)
+            pass
 
 
 if __name__ == '__main__':
