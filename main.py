@@ -58,7 +58,6 @@ def download_file(url, file_name):
     import requests
     import os
     import pycurl
-    from io import BytesIO
 
     if os.path.isfile(file_name):
         print('already downloaded %s' % file_name)
@@ -77,25 +76,23 @@ def download_file(url, file_name):
 
     # open in binary mode
     print('start download: %s' % file_name)
+    c = pycurl.Curl()
+    c.setopt(c.URL, url)
+    c.setopt(c.USERAGENT, 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.120 Safari/537.36')
+    #c.setopt(c.VERBOSE, True)
+    
     temp_file = '%s.temp' % file_name
-    with open(temp_file, "wb") as file:
-        # get request
-        # buffer = BytesIO()
-        c = pycurl.Curl()
-        c.setopt(c.URL, url)
-        c.setopt(c.WRITEDATA, file)
-        c.setopt(c.USERAGENT, 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.120 Safari/537.36')
-        c.setopt(c.VERBOSE, True)
-        c.perform()
-        c.close()
-        # r = requests.get(url, headers=headers)
-        # # write to file
-        # block_counter = 0
-        # for block in r.iter_content(1440):
-        #     if block:
-        #         file.write(block)
-        #         block_counter += 1
-        #         print('downloaded block: %d' % block_counter)
+    # Setup writing
+    if os.path.exists(temp_file):
+        f = open(temp_file, "ab")
+        c.setopt(pycurl.RESUME_FROM, os.path.getsize(temp_file))
+    else:
+        f = open(temp_file, "wb")
+
+    c.setopt(c.WRITEDATA, f)
+    c.perform()
+    c.close()
+    f.close()
 
     os.rename(temp_file, file_name)
     print('download done')
