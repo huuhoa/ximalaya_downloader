@@ -18,7 +18,24 @@ Example: to download **"Harvard Business Lessons"** at url `https://www.ximalaya
 $ python3 main.py https://www.ximalaya.com/waiyu/11692226/
 ```
 
+There is a report at the end of download session. When all downloads are success, it reads
+
+```
+album [album_name] is downloaded
+```
+
+when there are any errors, it reads
+
+```
+download is done however there are some errors occur.
+Please rerun the download command to retry!
+```
+
+in this case, just rerun the download command.
+
 ## Troubleshooting
+
+### Errors occured while downloading
 
 Sometime, server disconnects client, maybe, to prevent automate downloaders. The error message is something like
 
