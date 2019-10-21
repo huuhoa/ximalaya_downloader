@@ -133,6 +133,7 @@ def main():
     result = parse_html(path)
     print('album name: %s' % result['title'])
     os.makedirs(result['title'], exist_ok=True)
+    has_error = False
     for href, track_url in result['list']:
         track_path = download_html(track_url)
         play_path, track_file_name = parse_track_json(track_path)
@@ -141,7 +142,13 @@ def main():
             download_file(play_path, track_file_name)
         except Exception as ex:
             print(ex)
+            has_error = True
             pass
+
+    if has_error:
+        print('download is done however there are some errors occur. Please rerun the download command to retry!')
+    else:
+        print('album %s is downloaded' % result['title'])
 
 
 if __name__ == '__main__':
