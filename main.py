@@ -119,9 +119,30 @@ def parse_track_json(path):
     return play_path_64, file_name
 
 
+def download_track(album_title, track_url):
+    import os
+
+    track_path = download_html(track_url)
+    play_path, track_file_name = parse_track_json(track_path)
+    track_file_name = os.path.join(album_title, track_file_name)
+
+    has_error = False
+    try:
+        download_file(play_path, track_file_name)
+    except Exception as ex:
+        print(ex)
+        has_error = True
+        pass
+
+    return has_error
+
+
 def main():
     import os
     import argparse
+    import concurrent
+    from concurrent.futures import ThreadPoolExecutor
+    from functools import partial
 
     parser = argparse.ArgumentParser()
     parser.add_argument("url", help="album url", type=str)
@@ -131,19 +152,18 @@ def main():
     url = args.url
     path = download_html(url)
     result = parse_html(path)
-    print('album name: %s' % result['title'])
-    os.makedirs(result['title'], exist_ok=True)
+
+    album_title = result['title']
+    print('album name: %s' % album_title)
+    os.makedirs(album_title, exist_ok=True)
+
     has_error = False
-    for href, track_url in result['list']:
-        track_path = download_html(track_url)
-        play_path, track_file_name = parse_track_json(track_path)
-        track_file_name = os.path.join(result['title'], track_file_name)
-        try:
-            download_file(play_path, track_file_name)
-        except Exception as ex:
-            print(ex)
-            has_error = True
-            pass
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        func = partial(download_track, album_title)
+        errors = executor.map(func, [url for _, url in result['list']])
+        for err in errors:
+            if err:
+                has_error = True
 
     if has_error:
         print('download is done however there are some errors occur. Please rerun the download command to retry!')
