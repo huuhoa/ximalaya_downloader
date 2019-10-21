@@ -105,6 +105,7 @@ def download_file(url, file_name):
 def parse_track_json(path):
     import json
     import re
+    import os
 
     with open(path, 'r') as file:
         jsdata = file.read()
@@ -113,8 +114,8 @@ def parse_track_json(path):
     play_path_64 = js['play_path_64']
     title = js['title']
     title = re.sub(r'[^\x00-\x7f]',r'', title)
-    ext = 'm4a'
-    file_name = '%s.%s' % (title, ext)
+    _, file_extension = os.path.splitext(play_path_64)
+    file_name = '%s%s' % (title, file_extension)
     return play_path_64, file_name
 
 
