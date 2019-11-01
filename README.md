@@ -50,3 +50,10 @@ pycurl.error: (56, 'Recv failure: Connection reset by peer')
 ```
 
 All we have to do is wait for sometime - for cooldown - and rerun the download command. The waiting time maybe a few seconds to few minutes.
+
+## Convert m4a to mp3
+
+```bash
+$ for foo in *.m4a; do ffmpeg -i "$foo" -acodec libmp3lame -aq 2 "${foo%.m4a}.mp3"; done
+```
+
