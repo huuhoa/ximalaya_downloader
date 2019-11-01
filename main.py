@@ -119,12 +119,12 @@ def parse_track_json(path):
     return play_path_64, file_name
 
 
-def download_track(album_title, track_url):
+def download_track(album_path, track_url):
     import os
 
     track_path = download_html(track_url)
     play_path, track_file_name = parse_track_json(track_path)
-    track_file_name = os.path.join(album_title, track_file_name)
+    track_file_name = os.path.join(album_path, track_file_name)
 
     has_error = False
     try:
@@ -155,11 +155,12 @@ def main():
 
     album_title = result['title']
     print('album name: %s' % album_title)
-    os.makedirs(album_title, exist_ok=True)
+    album_path = os.join('./downloads', album_title)
+    os.makedirs(album_path, exist_ok=True)
 
     has_error = False
     with ThreadPoolExecutor(max_workers=5) as executor:
-        func = partial(download_track, album_title)
+        func = partial(download_track, album_path)
         errors = executor.map(func, [url for _, url in result['list']])
         for err in errors:
             if err:
