@@ -155,7 +155,7 @@ def main():
 
     album_title = result['title']
     print('album name: %s' % album_title)
-    album_path = os.join('./downloads', album_title)
+    album_path = os.path.join('./downloads', album_title)
     os.makedirs(album_path, exist_ok=True)
 
     has_error = False
