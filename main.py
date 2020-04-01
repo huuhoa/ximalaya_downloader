@@ -41,13 +41,14 @@ def parse_html(path):
     from bs4 import BeautifulSoup
     soup = BeautifulSoup(html_doc, 'html.parser')
 
-    title = soup.select_one('h1.title._II0L').contents[0]
+    title = soup.select_one('h1.title').contents[0]
+    # title = soup.select_one('h1.title._II0L').contents[0]
     result = {
         'title': title,
         'list': []
     }
-    for div in soup.select('div.sound-list._c2'):
-        for d in div.select('div.text._c2'):
+    for div in soup.select('div.sound-list._Qp'):
+        for d in div.select('div.text._Vc'):
             href = d.a['href']
             track_id = href.split("/")[-1]
             track_url = 'https://www.ximalaya.com/tracks/%s.json' % track_id
