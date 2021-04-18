@@ -1,20 +1,25 @@
 #!/usr/bin/env python3
 
-'''
-* performs GET to URL and save content (text) to cache folder
-* don't perform GET if cache content is already existed
 
-Prerequisite:
-* need cache folder to be created first
-'''
-def download_html(url):
-    import requests
+def get_hex_digest(value: str) -> str:
     import hashlib
+    m = hashlib.sha256()
+    m.update(value.encode())
+    return m.hexdigest()
+
+
+def save_url_to_cache(url):
+    """
+    * performs GET to URL and save content (text) to cache folder
+    * don't perform GET if cache content is already existed
+
+    Prerequisite:
+    * need cache folder to be created first
+    """
+    import requests
     import os
 
-    m = hashlib.sha256()
-    m.update(url.encode())
-    url_hash = m.hexdigest()
+    url_hash = get_hex_digest(url)
 
     cache_path = os.path.join('.cache', url_hash)
     if os.path.isfile(cache_path):
@@ -47,35 +52,23 @@ def parse_html(path):
         'title': title,
         'list': []
     }
-    for div in soup.select('div.sound-list._Qp'):
-        for d in div.select('div.text._Vc'):
+    for div in soup.select('div.sound-list._is'):
+        for d in div.select('div.text.lF_'):
             href = d.a['href']
             track_id = href.split("/")[-1]
             track_url = 'https://www.ximalaya.com/tracks/%s.json' % track_id
-            result['list'].append((href, track_url))
+            result['list'].append((href, track_url, track_id))
 
     return result
 
 
-def download_file(url, file_name):
-    import requests
+def download_media_file(url, file_name):
     import os
     import pycurl
 
     if os.path.isfile(file_name):
         print('already downloaded %s' % file_name)
         return
-
-    headers = {
-        'Connection': 'keep-alive',
-        'Cache-Control': 'max-age=0',
-        'Upgrade-Insecure-Requests': '1',
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.120 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
-        'Accept-Encoding': 'gzip, deflate',
-        'Accept-Language': 'en-US,en;q=0.9,vi;q=0.8',
-        'Referer': url,
-    }
 
     # open in binary mode
     print('start download: %s' % file_name)
@@ -114,22 +107,24 @@ def parse_track_json(path):
     js = json.loads(jsdata)
     play_path_64 = js['play_path_64']
     title = js['title']
-    title = re.sub(r'[^\x00-\x7f]',r'', title)
+    title = re.sub(r'[^\x00-\x7f]', r'', title)
     _, file_extension = os.path.splitext(play_path_64)
     file_name = '%s%s' % (title, file_extension)
     return play_path_64, file_name
 
 
-def download_track(album_path, track_url):
+def download_track(album_path, naming, track_info):
     import os
 
-    track_path = download_html(track_url)
+    href, track_url, track_id = track_info
+    track_path = save_url_to_cache(track_url)
     play_path, track_file_name = parse_track_json(track_path)
-    track_file_name = os.path.join(album_path, track_file_name)
-
     has_error = False
     try:
-        download_file(play_path, track_file_name)
+        file_name = os.path.join(album_path, track_file_name)
+        if naming == 'track':
+            file_name = os.path.join(album_path, f'{track_id}_{track_file_name}')
+        download_media_file(play_path, file_name)
     except Exception as ex:
         print(ex)
         has_error = True
@@ -141,17 +136,17 @@ def download_track(album_path, track_url):
 def main():
     import os
     import argparse
-    import concurrent
     from concurrent.futures import ThreadPoolExecutor
     from functools import partial
 
     parser = argparse.ArgumentParser()
     parser.add_argument("url", help="album url", type=str)
+    parser.add_argument('--naming', help='naming scheme for output file', type=str, default='default')
     args = parser.parse_args()
 
     os.makedirs('.cache', exist_ok=True)
     url = args.url
-    path = download_html(url)
+    path = save_url_to_cache(url)
     result = parse_html(path)
 
     album_title = result['title']
@@ -160,9 +155,9 @@ def main():
     os.makedirs(album_path, exist_ok=True)
 
     has_error = False
-    with ThreadPoolExecutor(max_workers=5) as executor:
-        func = partial(download_track, album_path)
-        errors = executor.map(func, [url for _, url in result['list']])
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        func = partial(download_track, album_path, args.naming)
+        errors = executor.map(func, [r for r in result['list']])
         for err in errors:
             if err:
                 has_error = True
