@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 
 
+USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_0) AppleWebKit/537.36 (KHTML, like Gecko) ' \
+             'Chrome/77.0.3865.120 Safari/537.36'
+
+
 def get_hex_digest(value: str) -> str:
     import hashlib
     m = hashlib.sha256()
@@ -25,8 +29,8 @@ def save_url_to_cache(url):
     if os.path.isfile(cache_path):
         return cache_path
 
-    temp_path = os.path.join('.cache', '%s.temp' % url_hash)
-    headers={"User-Agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.120 Safari/537.36"}
+    temp_path = os.path.join('.cache', f'{url_hash}.temp')
+    headers = {"User-Agent": USER_AGENT}
     with open(temp_path, "wb") as file:
         # get request
         response = requests.get(url, headers=headers)
@@ -38,8 +42,6 @@ def save_url_to_cache(url):
 
 
 def parse_html(path):
-    import urllib.parse
-
     with open(path, 'r') as file:
         html_doc = file.read()
 
@@ -74,9 +76,9 @@ def download_media_file(url, file_name):
     print('start download: %s' % file_name)
     c = pycurl.Curl()
     c.setopt(c.URL, url)
-    c.setopt(c.USERAGENT, 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.120 Safari/537.36')
-    #c.setopt(c.VERBOSE, True)
-    
+    c.setopt(c.USERAGENT, USER_AGENT)
+    # c.setopt(c.VERBOSE, True)
+
     temp_file = '%s.temp' % file_name
     # Setup writing
     if os.path.exists(temp_file):
@@ -87,7 +89,7 @@ def download_media_file(url, file_name):
 
     c.setopt(c.WRITEDATA, f)
     try:
-        c.perform()        
+        c.perform()
     finally:
         c.close()
         f.close()
@@ -102,9 +104,9 @@ def parse_track_json(path):
     import os
 
     with open(path, 'r') as file:
-        jsdata = file.read()
+        json_data = file.read()
 
-    js = json.loads(jsdata)
+    js = json.loads(json_data)
     play_path_64 = js['play_path_64']
     title = js['title']
     title = re.sub(r'[^\x00-\x7f]', r'', title)
@@ -170,4 +172,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
