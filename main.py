@@ -54,8 +54,8 @@ def parse_html(path):
         'title': title,
         'list': []
     }
-    for div in soup.select('div.sound-list._is'):
-        for d in div.select('div.text.lF_'):
+    for div in soup.select('div.sound-list._BJ'):
+        for d in div.select('div.text.VN_'):
             href = d.a['href']
             track_id = href.split("/")[-1]
             track_url = 'https://www.ximalaya.com/tracks/%s.json' % track_id
