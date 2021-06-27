@@ -174,7 +174,11 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("url", help="album url", type=str)
-    parser.add_argument('--naming', help='naming scheme for output file', type=str, default='default')
+    parser.add_argument('--naming', help='naming scheme for output file. '
+                                         'Default: will use default filename from URL. '
+                                         'Track: will append track_id to the final filename',
+                        type=str, default='default',
+                        choices=['default', 'track'])
     parser.add_argument('--extension', '-e', help='file name extension', type=str, default='m4a',
                         choices=['m4a', 'mp3'])
     args = parser.parse_args()
