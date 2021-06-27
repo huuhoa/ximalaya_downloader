@@ -69,11 +69,11 @@ def download_media_file(url, file_name):
     import pycurl
 
     if os.path.isfile(file_name):
-        print('already downloaded %s' % file_name)
+        print(f'already downloaded: {file_name}')
         return
 
     # open in binary mode
-    print('start download: %s' % file_name)
+    print(f'start download: {file_name}')
     c = pycurl.Curl()
     c.setopt(c.URL, url)
     c.setopt(c.USERAGENT, USER_AGENT)
@@ -95,7 +95,7 @@ def download_media_file(url, file_name):
         f.close()
 
     os.rename(temp_file, file_name)
-    print('download done')
+    print(f'download done: {file_name}')
 
 
 def parse_track_json(path):
@@ -115,7 +115,35 @@ def parse_track_json(path):
     return play_path_64, file_name
 
 
-def download_track(album_path, naming, track_info):
+def convert_media_file(file_name, extension):
+    r"""
+    Convert existing media file to another format using ffmpeg
+    :param file_name: full path to existing media file
+    :param extension: new format
+    :return:
+    """
+    import os
+    import subprocess
+
+    root, _ = os.path.splitext(file_name)
+    final_file_name = f'{root}.{extension}'
+    print(f'converting to: {final_file_name}')
+    subprocess.run(['ffmpeg', '-i', file_name, '-y', '-acodec', 'libmp3lame', '-aq', '4', final_file_name],
+                   stdout=subprocess.PIPE,
+                   stderr=subprocess.PIPE)
+    print(f'converting done: {final_file_name}')
+    # another approach to use ffmpeg-python
+    # import ffmpeg
+    #
+    # (
+    #     ffmpeg
+    #     .input(file_name)
+    #     .output(filename=f'{root}.{extension}', acodec='libmp3lame', aq=4)
+    #     .run()
+    # )
+
+
+def download_track(album_path, naming, extension, track_info):
     import os
 
     href, track_url, track_id = track_info
@@ -127,6 +155,9 @@ def download_track(album_path, naming, track_info):
         if naming == 'track':
             file_name = os.path.join(album_path, f'{track_id}_{track_file_name}')
         download_media_file(play_path, file_name)
+        _, ext = os.path.splitext(file_name)
+        if ext != f'.{extension}':
+            convert_media_file(file_name, extension)
     except Exception as ex:
         print(ex)
         has_error = True
@@ -144,6 +175,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("url", help="album url", type=str)
     parser.add_argument('--naming', help='naming scheme for output file', type=str, default='default')
+    parser.add_argument('--extension', '-e', help='file name extension', type=str, default='m4a',
+                        choices=['m4a', 'mp3'])
     args = parser.parse_args()
 
     os.makedirs('.cache', exist_ok=True)
@@ -158,7 +191,7 @@ def main():
 
     has_error = False
     with ThreadPoolExecutor(max_workers=10) as executor:
-        func = partial(download_track, album_path, args.naming)
+        func = partial(download_track, album_path, args.naming, args.extension)
         errors = executor.map(func, [r for r in result['list']])
         for err in errors:
             if err:
