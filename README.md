@@ -54,6 +54,6 @@ All we have to do is wait for sometime - for cooldown - and rerun the download c
 ## Convert m4a to mp3
 
 ```bash
-$ for foo in *.m4a; do ffmpeg -i "$foo" -acodec libmp3lame -aq 2 "${foo%.m4a}.mp3"; done
+$ for foo in *.m4a; do ffmpeg -i "$foo" -acodec libmp3lame -aq 4 "${foo%.m4a}.mp3"; done
 ```
 
